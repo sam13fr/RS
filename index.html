@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Colle un lien TikTok et copie la commande de téléchargement pour a-Shell mini." />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-title" content="RS" />
+  <title>RS · a-Shell mini</title>
+  <style>
+    :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Arial, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin:0; background: radial-gradient(ellipse at 90% 0%,#1e2934 0%,#0b0b10 40%,#09090c 100%); color:#f5f5f7; min-height:100svh; }
+    main { width: min(100%, 570px); margin: 0 auto; padding: max(28px,env(safe-area-inset-top)) 22px max(34px,env(safe-area-inset-bottom)); }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:750; letter-spacing:-.2px; font-size:14px; }
+    .brandmark { background: linear-gradient(135deg,#34ece9,#fc376c); color:#050508; width:41px; height:41px; display:grid; place-items:center; border-radius:13px; font-size:17px; letter-spacing:-1px; }
+    h1 { font-size: clamp(31px,8vw,44px); line-height:1.08; letter-spacing:-1.7px; margin:42px 0 12px; }
+    h1 em { font-style:normal; background: linear-gradient(90deg,#39e9ea,#fa4775); background-clip:text; -webkit-background-clip:text; color:transparent; }
+    .lead { color:#a9adb9; line-height:1.5; font-size:16px; margin:0 0 30px; }
+    label { font-size:13px; font-weight:650; display:block; margin-bottom:9px; }
+    .field { background:#191a22; border:1px solid #383a46; border-radius:15px; display:flex; align-items:center; padding:6px; gap:6px; }
+    .field:focus-within { border-color:#42e3df; box-shadow:0 0 0 3px #42e3df1d; }
+    input { width:100%; padding:12px 9px; color:white; background:transparent; border:0; outline:0; font-size:15px; }
+    input::placeholder { color:#757989; }
+    .tiny { background:#292b35; border:0; color:#d5d6dc; font-size:12px; padding:10px 12px; border-radius:10px; white-space:nowrap; cursor:pointer; }
+    .panel { margin-top:21px; border:1px solid #30323b; border-radius:17px; background:#15161c; padding:17px; }
+    .row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .eyebrow { font-size:12px; font-weight:750; color:#999eab; letter-spacing:.08em; text-transform:uppercase; }
+    code { margin:15px 0 18px; display:block; font-family:ui-monospace,"SFMono-Regular",Menlo,monospace; font-size:13px; line-height:1.65; color:#d0f5e8; overflow-wrap:anywhere; white-space:pre-wrap; }
+    button.main { background:linear-gradient(100deg,#35dad8,#4cbbf2); border:0; border-radius:12px; width:100%; padding:15px; color:#07141a; font-size:16px; font-weight:750; cursor:pointer; }
+    button.main:disabled { opacity:.35; cursor:not-allowed; }
+    #message { min-height:20px; font-size:13px; margin:13px 2px 0; color:#aeb4c2; }
+    #message.error { color:#ff8799; }
+    .steps { padding:0; margin:30px 0 0; display:grid; gap:15px; list-style:none; counter-reset:item; }
+    .steps li { display:flex; gap:12px; align-items:start; color:#aeb4c2; font-size:14px; line-height:1.5; }
+    .steps li::before { counter-increment:item; content:counter(item); color:#0b141c; background:#50dae2; border-radius:50%; height:23px; width:23px; display:grid; place-items:center; font-size:12px; font-weight:750; flex-shrink:0; }
+    strong { color:#f5f5f7; }
+    footer { margin-top:32px; font-size:12px; line-height:1.55; color:#828694; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand"><div class="brandmark">RS</div>RS · A-SHELL MINI</div>
+    <h1>Colle le lien.<br /><em>Copie la commande.</em></h1>
+    <p class="lead">Un générateur simple pour télécharger une vidéo TikTok dans ton dossier <strong>SW-DLT</strong> sur iPhone.</p>
+    <label for="url">Lien de la vidéo TikTok</label>
+    <div class="field">
+      <input id="url" type="url" inputmode="url" spellcheck="false" autocomplete="off" autocapitalize="none" placeholder="https://vm.tiktok.com/…" value="" />
+      <button class="tiny" id="paste" type="button">Coller</button>
+    </div>
+    <div class="panel">
+      <div class="row"><span class="eyebrow">Commande a-Shell mini</span><span aria-hidden="true">⌘</span></div>
+      <code id="command">Colle un lien TikTok ci-dessus…</code>
+      <button class="main" id="copy" type="button" disabled>Copier la commande</button>
+      <div id="message" aria-live="polite"></div>
+    </div>
+    <ol class="steps">
+      <li><span>Colle le lien TikTok ci-dessus.</span></li>
+      <li><span>Appuie sur <strong>Copier la commande</strong>.</span></li>
+      <li><span>Ouvre <strong>a-Shell mini</strong>, colle la commande et valide avec Entrée.</span></li>
+    </ol>
+    <footer>Fonctionne sans connexion pour générer la commande. Le téléchargement utilise <strong>yt-dlp</strong>, déjà installé dans ton a-Shell mini. Certaines vidéos privées ou protégées peuvent ne pas être accessibles.</footer>
+  </main>
+  <script>
+    const input = document.getElementById('url');
+    const code = document.getElementById('command');
+    const copyBtn = document.getElementById('copy');
+    const message = document.getElementById('message');
+    const pasteBtn = document.getElementById('paste');
+    let current = '';
+    function shellQuote(s) { return "'" + s.replace(/'/g, "'\\''") + "'"; }
+    function update() {
+      const link = input.value.trim();
+      current = ''; message.textContent = ''; message.className = '';
+      if (!link) { code.textContent = 'Colle un lien TikTok ci-dessus…'; copyBtn.disabled = true; return; }
+      let u;
+      try { u = new URL(link); }
+      catch { code.textContent = 'Lien non valide.'; copyBtn.disabled = true; return; }
+      const host = u.hostname.toLowerCase();
+      if (u.protocol !== 'https:' || (host !== 'tiktok.com' && !host.endsWith('.tiktok.com'))) {
+        code.textContent = 'Utilise un lien https://…tiktok.com/…'; copyBtn.disabled = true; return;
+      }
+      current = 'cd ~/Documents/SW-DLT && yt-dlp --ignore-config --no-playlist -o ' + shellQuote('RS-%(id)s.%(ext)s') + ' ' + shellQuote(u.href);
+      code.textContent = current;
+      copyBtn.disabled = false;
+    }
+    async function copyText(t) {
+      if (navigator.clipboard && navigator.clipboard.writeText) { try { await navigator.clipboard.writeText(t); return true; } catch {} }
+      const ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.left = '-9999px'; document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch {}
+      ta.remove(); return ok;
+    }
+    copyBtn.addEventListener('click', async () => {
+      if (!current) return;
+      if (await copyText(current)) { message.textContent = 'Commande copiée ! Ouvre a-Shell mini et colle-la.'; }
+      else { message.textContent = 'Copie manuelle : appui long sur la commande ci-dessus.'; message.className = 'error'; }
+    });
+    pasteBtn.addEventListener('click', async () => {
+      try { input.value = await navigator.clipboard.readText(); input.dispatchEvent(new Event('input')); }
+      catch { input.focus(); message.textContent = 'Appui long dans le champ, puis « Coller ».'; }
+    });
+    input.addEventListener('input', update);
+    update();
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
