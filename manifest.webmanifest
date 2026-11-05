@@ -1,7 +1,7 @@
 {
   "name": "RS",
   "short_name": "RS",
-  "description": "RS : générateur de commandes pour a-Shell mini",
+  "description": "RS : vidéos et photos de plusieurs réseaux sociaux vers a-Shell mini",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",

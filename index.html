@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0a0a0d" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="description" content="Colle un lien TikTok et copie la commande de téléchargement pour a-Shell mini." />
+  <meta name="description" content="RS : génère des commandes a-Shell mini pour les vidéos et photos de plusieurs réseaux sociaux." />
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
@@ -41,30 +41,45 @@
     .steps li::before { counter-increment:item; content:counter(item); color:#0b141c; background:#50dae2; border-radius:50%; height:23px; width:23px; display:grid; place-items:center; font-size:12px; font-weight:750; flex-shrink:0; }
     strong { color:#f5f5f7; }
     footer { margin-top:32px; font-size:12px; line-height:1.55; color:#828694; }
+    .detected {display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:29px;margin:10px 1px 18px;font-size:12px;color:#97dcd9}
+    #suggestion {color:#9ea3b0;font-size:12px;text-align:right}
+    .mode-group {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;background:#191a22;border:1px solid #383a46;border-radius:14px;margin:3px 0 10px}
+    .mode {padding:11px 4px;background:transparent;border:0;border-radius:10px;color:#adb5c2;font-weight:750;font-size:14px;cursor:pointer}
+    .mode.active {color:#0c1821;background:#50d9e0}
+    .hint {font-size:12px;line-height:1.5;color:#a3a8b5;margin:0 1px}
+    
   </style>
 </head>
 <body>
   <main>
     <div class="brand"><div class="brandmark">RS</div>RS · A-SHELL MINI</div>
     <h1>Colle le lien.<br /><em>Copie la commande.</em></h1>
-    <p class="lead">Un générateur simple pour télécharger une vidéo TikTok dans ton dossier <strong>SW-DLT</strong> sur iPhone.</p>
-    <label for="url">Lien de la vidéo TikTok</label>
+    <p class="lead">Vidéos et photos de <strong>TikTok, Instagram, Facebook, YouTube, X, Reddit, Pinterest, Vimeo</strong> et d’autres sites compatibles.</p>
+    <label for="url">Lien de la publication</label>
     <div class="field">
-      <input id="url" type="url" inputmode="url" spellcheck="false" autocomplete="off" autocapitalize="none" placeholder="https://vm.tiktok.com/…" value="" />
+      <input id="url" type="url" inputmode="url" spellcheck="false" autocomplete="off" autocapitalize="none" placeholder="Colle ton lien ici…" value="" />
       <button class="tiny" id="paste" type="button">Coller</button>
     </div>
+    <div class="detected"><span id="platform">Réseau : non détecté</span><span id="suggestion"></span></div>
+    <label for="mode-auto">Type de contenu</label>
+    <div class="mode-group" role="group" aria-label="Type de contenu">
+      <button class="mode active" id="mode-auto" type="button" data-mode="auto" aria-pressed="true">Auto</button>
+      <button class="mode" type="button" data-mode="video" aria-pressed="false">Vidéo</button>
+      <button class="mode" type="button" data-mode="photo" aria-pressed="false">Photos</button>
+    </div>
+    <p class="hint" id="hint">Le mode Auto propose une méthode selon le lien. Tu peux choisir Vidéo ou Photos si nécessaire.</p>
     <div class="panel">
       <div class="row"><span class="eyebrow">Commande a-Shell mini</span><span aria-hidden="true">⌘</span></div>
-      <code id="command">Colle un lien TikTok ci-dessus…</code>
+      <code id="command">Colle un lien ci-dessus…</code>
       <button class="main" id="copy" type="button" disabled>Copier la commande</button>
       <div id="message" aria-live="polite"></div>
     </div>
     <ol class="steps">
-      <li><span>Colle le lien TikTok ci-dessus.</span></li>
+      <li><span>Colle un lien de réseau social ci-dessus.</span></li>
       <li><span>Appuie sur <strong>Copier la commande</strong>.</span></li>
       <li><span>Ouvre <strong>a-Shell mini</strong>, colle la commande et valide avec Entrée.</span></li>
     </ol>
-    <footer>Fonctionne sans connexion pour générer la commande. Le téléchargement utilise <strong>yt-dlp</strong>, déjà installé dans ton a-Shell mini. Certaines vidéos privées ou protégées peuvent ne pas être accessibles.</footer>
+    <footer><strong>RS 3 · Multi-réseaux.</strong> Génération hors ligne. Pour les vidéos, RS utilise <strong>yt-dlp</strong> ; pour les photos, <strong>gallery-dl</strong>. Les commandes sont à exécuter dans a-Shell mini, dans le dossier où tu veux conserver les fichiers. Les liens privés, les contenus protégés ou certains sites peuvent nécessiter une connexion ou ne pas fonctionner. Respecte les droits des créateurs.</footer>
   </main>
   <script>
     const input = document.getElementById('url');
@@ -72,37 +87,108 @@
     const copyBtn = document.getElementById('copy');
     const message = document.getElementById('message');
     const pasteBtn = document.getElementById('paste');
+    const platformLabel = document.getElementById('platform');
+    const suggestion = document.getElementById('suggestion');
+    const hint = document.getElementById('hint');
+    const modeButtons = [...document.querySelectorAll('[data-mode]')];
     let current = '';
-    function shellQuote(s) { return "'" + s.replace(/'/g, "'\\''") + "'"; }
+    let selectedMode = 'auto';
+
+    const shellQuote = value => "'" + value.replace(/'/g, "'\\''") + "'";
+    function getUrlFromText(raw) {
+      const match = raw.match(/https?:\/\/[^\s<>"']+/i);
+      if (!match) return null;
+      return match[0].replace(/[.,;!?]+$/, '');
+    }
+    function detect(u) {
+      const host = u.hostname.toLowerCase().replace(/^www\./,'');
+      const path = u.pathname.toLowerCase();
+      const test = (d) => host === d || host.endsWith('.' + d);
+      if (test('tiktok.com')) return {name:'TikTok',defaultMode:path.includes('/photo/')?'photo':'video'};
+      if (test('instagram.com')) return {name:'Instagram',defaultMode:/^\/p\//.test(path)?'photo':'video'};
+      if (test('facebook.com') || test('fb.watch')) return {name:'Facebook',defaultMode:/photos|\/photo|\/posts\//.test(path)?'photo':'video'};
+      if (test('youtube.com') || test('youtu.be')) return {name:'YouTube',defaultMode:'video'};
+      if (test('twitter.com') || test('x.com') || test('t.co')) return {name:'X / Twitter',defaultMode:'video'};
+      if (test('reddit.com') || test('redd.it')) return {name:'Reddit',defaultMode:'video'};
+      if (test('pinterest.com') || test('pin.it')) return {name:'Pinterest',defaultMode:'photo'};
+      if (test('vimeo.com')) return {name:'Vimeo',defaultMode:'video'};
+      if (test('dailymotion.com') || test('dai.ly')) return {name:'Dailymotion',defaultMode:'video'};
+      if (test('bsky.app')) return {name:'Bluesky',defaultMode:'photo'};
+      if (test('tumblr.com')) return {name:'Tumblr',defaultMode:'photo'};
+      return {name:host || 'Autre site',defaultMode:'video'};
+    }
     function update() {
-      const link = input.value.trim();
-      current = ''; message.textContent = ''; message.className = '';
-      if (!link) { code.textContent = 'Colle un lien TikTok ci-dessus…'; copyBtn.disabled = true; return; }
-      let u;
-      try { u = new URL(link); }
-      catch { code.textContent = 'Lien non valide.'; copyBtn.disabled = true; return; }
-      const host = u.hostname.toLowerCase();
-      if (u.protocol !== 'https:' || (host !== 'tiktok.com' && !host.endsWith('.tiktok.com'))) {
-        code.textContent = 'Utilise un lien https://…tiktok.com/…'; copyBtn.disabled = true; return;
+      current = '';
+      message.textContent = '';
+      message.className = '';
+      const raw = input.value.trim();
+      if (!raw) {
+        code.textContent = 'Colle un lien ci-dessus…';
+        copyBtn.disabled = true;
+        platformLabel.textContent = 'Réseau : non détecté';
+        suggestion.textContent = '';
+        return;
       }
-      current = 'cd ~/Documents/SW-DLT && yt-dlp --verbose --ignore-config -o ' + shellQuote('RS-%(id)s.%(ext)s') + ' ' + shellQuote(u.href);
+      let u;
+      try {
+        const link = getUrlFromText(raw);
+        if (!link) throw new Error('missing');
+        u = new URL(link);
+        if (!['http:', 'https:'].includes(u.protocol) || !u.hostname.includes('.')) throw new Error('invalid');
+      } catch {
+        code.textContent = 'Lien non valide. Colle une adresse https://…';
+        copyBtn.disabled = true;
+        platformLabel.textContent = 'Lien non reconnu';
+        suggestion.textContent = '';
+        return;
+      }
+      const info = detect(u);
+      const finalMode = selectedMode === 'auto' ? info.defaultMode : selectedMode;
+      platformLabel.textContent = 'Réseau : ' + info.name;
+      suggestion.textContent = (selectedMode === 'auto' ? 'Auto → ' : '') + (finalMode === 'photo' ? 'Photos' : 'Vidéo');
+      hint.textContent = selectedMode === 'auto'
+        ? 'Le type est estimé depuis l’adresse. Pour un lien court ou une publication mixte, sélectionne Vidéo ou Photos si la commande échoue.'
+        : (finalMode === 'photo'
+            ? 'Utilise gallery-dl pour récupérer les images et les médias accessibles de la publication.'
+            : 'Utilise yt-dlp avec le mode diagnostic déjà testé dans a-Shell mini.');
+      current = finalMode === 'photo'
+        ? 'gallery-dl ' + shellQuote(u.href)
+        : 'yt-dlp --verbose --ignore-config -o ' + shellQuote('RS-%(id)s.%(ext)s') + ' ' + shellQuote(u.href);
       code.textContent = current;
       copyBtn.disabled = false;
     }
-    async function copyText(t) {
-      if (navigator.clipboard && navigator.clipboard.writeText) { try { await navigator.clipboard.writeText(t); return true; } catch {} }
+    async function copyText(text) {
+      if (navigator.clipboard?.writeText) {
+        try { await navigator.clipboard.writeText(text); return true; } catch {}
+      }
       const ta = document.createElement('textarea');
-      ta.value = t; ta.style.position = 'fixed'; ta.style.left = '-9999px'; document.body.appendChild(ta); ta.select();
-      let ok = false; try { ok = document.execCommand('copy'); } catch {}
-      ta.remove(); return ok;
+      ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch {}
+      ta.remove();
+      return ok;
     }
+    modeButtons.forEach(btn => btn.addEventListener('click', () => {
+      selectedMode = btn.dataset.mode;
+      modeButtons.forEach(b => {
+        const active = b === btn;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      update();
+    }));
     copyBtn.addEventListener('click', async () => {
       if (!current) return;
-      if (await copyText(current)) { message.textContent = 'Commande copiée ! Ouvre a-Shell mini et colle-la.'; }
-      else { message.textContent = 'Copie manuelle : appui long sur la commande ci-dessus.'; message.className = 'error'; }
+      if (await copyText(current)) {
+        message.textContent = 'Commande copiée ! Ouvre a-Shell mini et colle-la.';
+      } else {
+        message.textContent = 'Copie manuelle : appui long sur la commande.';
+        message.className = 'error';
+      }
     });
     pasteBtn.addEventListener('click', async () => {
-      try { input.value = await navigator.clipboard.readText(); input.dispatchEvent(new Event('input')); }
+      try { input.value = await navigator.clipboard.readText(); update(); }
       catch { input.focus(); message.textContent = 'Appui long dans le champ, puis « Coller ».'; }
     });
     input.addEventListener('input', update);
