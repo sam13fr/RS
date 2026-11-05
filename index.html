@@ -34,6 +34,7 @@
     code { margin:15px 0 18px; display:block; font-family:ui-monospace,"SFMono-Regular",Menlo,monospace; font-size:13px; line-height:1.65; color:#d0f5e8; overflow-wrap:anywhere; white-space:pre-wrap; }
     button.main { background:linear-gradient(100deg,#35dad8,#4cbbf2); border:0; border-radius:12px; width:100%; padding:15px; color:#07141a; font-size:16px; font-weight:750; cursor:pointer; }
     button.main:disabled { opacity:.35; cursor:not-allowed; }
+    #launch { margin-top:10px; background:transparent; color:#50dae2; border:1px solid #50dae2; }
     #message { min-height:20px; font-size:13px; margin:13px 2px 0; color:#aeb4c2; }
     #message.error { color:#ff8799; }
     .steps { padding:0; margin:30px 0 0; display:grid; gap:15px; list-style:none; counter-reset:item; }
@@ -53,7 +54,7 @@
 <body>
   <main>
     <div class="brand"><div class="brandmark">RS</div>RS · A-SHELL MINI</div>
-    <h1>Colle le lien.<br /><em>Copie la commande.</em></h1>
+    <h1>Colle le lien.<br /><em>Télécharge en un geste.</em></h1>
     <p class="lead">Vidéos et photos de <strong>TikTok, Instagram, Facebook, YouTube, X, Reddit, Pinterest, Vimeo</strong> et d’autres sites compatibles. Sur YouTube, RS privilégie le MP4 pour iPhone.</p>
     <label for="url">Lien de la publication</label>
     <div class="field">
@@ -72,19 +73,21 @@
       <div class="row"><span class="eyebrow">Commande a-Shell mini</span><span aria-hidden="true">⌘</span></div>
       <code id="command">Colle un lien ci-dessus…</code>
       <button class="main" id="copy" type="button" disabled>Copier la commande</button>
+      <button class="main" id="launch" type="button" disabled>Télécharger avec a-Shell mini</button>
       <div id="message" aria-live="polite"></div>
     </div>
     <ol class="steps">
       <li><span>Colle un lien de réseau social ci-dessus.</span></li>
-      <li><span>Appuie sur <strong>Copier la commande</strong>.</span></li>
-      <li><span>Ouvre <strong>a-Shell mini</strong>, colle la commande et valide avec Entrée.</span></li>
+      <li><span>Appuie sur <strong>Télécharger avec a-Shell mini</strong> (raccourci Apple « RS Télécharger » installé).</span></li>
+      <li><span>Confirme la commande dans Raccourcis. Tu peux toujours utiliser « Copier la commande ».</span></li>
     </ol>
-    <footer><strong>RS 4 · Multi-réseaux.</strong> Génération hors ligne. Pour les vidéos, RS utilise <strong>yt-dlp</strong> ; pour les photos, <strong>gallery-dl</strong>. Les commandes sont à exécuter dans a-Shell mini, dans le dossier où tu veux conserver les fichiers. Les liens privés, les contenus protégés ou certains sites peuvent nécessiter une connexion ou ne pas fonctionner. Respecte les droits des créateurs.</footer>
+    <footer><strong>RS 5 · Multi-réseaux + Raccourcis.</strong> Génération hors ligne. Pour les vidéos, RS utilise <strong>yt-dlp</strong> ; pour les photos, <strong>gallery-dl</strong>. Les commandes sont à exécuter dans a-Shell mini, dans le dossier où tu veux conserver les fichiers. Les liens privés, les contenus protégés ou certains sites peuvent nécessiter une connexion ou ne pas fonctionner. Respecte les droits des créateurs.</footer>
   </main>
   <script>
     const input = document.getElementById('url');
     const code = document.getElementById('command');
     const copyBtn = document.getElementById('copy');
+    const launchBtn = document.getElementById('launch');
     const message = document.getElementById('message');
     const pasteBtn = document.getElementById('paste');
     const platformLabel = document.getElementById('platform');
@@ -124,7 +127,7 @@
       const raw = input.value.trim();
       if (!raw) {
         code.textContent = 'Colle un lien ci-dessus…';
-        copyBtn.disabled = true;
+        copyBtn.disabled = true; launchBtn.disabled = true;
         platformLabel.textContent = 'Réseau : non détecté';
         suggestion.textContent = '';
         return;
@@ -137,7 +140,7 @@
         if (!['http:', 'https:'].includes(u.protocol) || !u.hostname.includes('.')) throw new Error('invalid');
       } catch {
         code.textContent = 'Lien non valide. Colle une adresse https://…';
-        copyBtn.disabled = true;
+        copyBtn.disabled = true; launchBtn.disabled = true;
         platformLabel.textContent = 'Lien non reconnu';
         suggestion.textContent = '';
         return;
@@ -158,7 +161,7 @@
         ? 'gallery-dl ' + shellQuote(u.href)
         : 'yt-dlp --verbose --ignore-config ' + (youtubeMp4 ? '-f ' + shellQuote('b[ext=mp4]') + ' ' : '') + '-o ' + shellQuote('RS-%(id)s.%(ext)s') + ' ' + shellQuote(u.href);
       code.textContent = current;
-      copyBtn.disabled = false;
+      copyBtn.disabled = false; launchBtn.disabled = false;
     }
     async function copyText(text) {
       if (navigator.clipboard?.writeText) {
@@ -181,6 +184,15 @@
       });
       update();
     }));
+    launchBtn.addEventListener('click', () => {
+      if (!current) return;
+      // The native Shortcut always previews the command and asks for confirmation.
+      // HTTPS-originated app only: do not use an embedded arbitrary shell command from the address bar.
+      const launch = 'shortcuts://run-shortcut?name=' + encodeURIComponent('RS Télécharger')
+        + '&input=text&text=' + encodeURIComponent(current);
+      message.textContent = 'Ouverture du raccourci « RS Télécharger »…';
+      window.location.href = launch;
+    });
     copyBtn.addEventListener('click', async () => {
       if (!current) return;
       if (await copyText(current)) {
