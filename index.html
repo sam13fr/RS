@@ -85,7 +85,7 @@
       if (u.protocol !== 'https:' || (host !== 'tiktok.com' && !host.endsWith('.tiktok.com'))) {
         code.textContent = 'Utilise un lien https://…tiktok.com/…'; copyBtn.disabled = true; return;
       }
-      current = 'cd ~/Documents/SW-DLT && yt-dlp --ignore-config --no-playlist -o ' + shellQuote('RS-%(id)s.%(ext)s') + ' ' + shellQuote(u.href);
+      current = 'cd ~/Documents/SW-DLT && yt-dlp --verbose --ignore-config -o ' + shellQuote('RS-%(id)s.%(ext)s') + ' ' + shellQuote(u.href);
       code.textContent = current;
       copyBtn.disabled = false;
     }
