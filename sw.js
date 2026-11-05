@@ -1,4 +1,4 @@
-const CACHE = 'rs-ashell-2026-v3';
+const CACHE = 'rs-ashell-2026-v4';
 const ASSETS = ['./', './index.html', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './manifest.webmanifest'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

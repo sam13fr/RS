@@ -54,7 +54,7 @@
   <main>
     <div class="brand"><div class="brandmark">RS</div>RS · A-SHELL MINI</div>
     <h1>Colle le lien.<br /><em>Copie la commande.</em></h1>
-    <p class="lead">Vidéos et photos de <strong>TikTok, Instagram, Facebook, YouTube, X, Reddit, Pinterest, Vimeo</strong> et d’autres sites compatibles.</p>
+    <p class="lead">Vidéos et photos de <strong>TikTok, Instagram, Facebook, YouTube, X, Reddit, Pinterest, Vimeo</strong> et d’autres sites compatibles. Sur YouTube, RS privilégie le MP4 pour iPhone.</p>
     <label for="url">Lien de la publication</label>
     <div class="field">
       <input id="url" type="url" inputmode="url" spellcheck="false" autocomplete="off" autocapitalize="none" placeholder="Colle ton lien ici…" value="" />
@@ -79,7 +79,7 @@
       <li><span>Appuie sur <strong>Copier la commande</strong>.</span></li>
       <li><span>Ouvre <strong>a-Shell mini</strong>, colle la commande et valide avec Entrée.</span></li>
     </ol>
-    <footer><strong>RS 3 · Multi-réseaux.</strong> Génération hors ligne. Pour les vidéos, RS utilise <strong>yt-dlp</strong> ; pour les photos, <strong>gallery-dl</strong>. Les commandes sont à exécuter dans a-Shell mini, dans le dossier où tu veux conserver les fichiers. Les liens privés, les contenus protégés ou certains sites peuvent nécessiter une connexion ou ne pas fonctionner. Respecte les droits des créateurs.</footer>
+    <footer><strong>RS 4 · Multi-réseaux.</strong> Génération hors ligne. Pour les vidéos, RS utilise <strong>yt-dlp</strong> ; pour les photos, <strong>gallery-dl</strong>. Les commandes sont à exécuter dans a-Shell mini, dans le dossier où tu veux conserver les fichiers. Les liens privés, les contenus protégés ou certains sites peuvent nécessiter une connexion ou ne pas fonctionner. Respecte les droits des créateurs.</footer>
   </main>
   <script>
     const input = document.getElementById('url');
@@ -145,15 +145,18 @@
       const info = detect(u);
       const finalMode = selectedMode === 'auto' ? info.defaultMode : selectedMode;
       platformLabel.textContent = 'Réseau : ' + info.name;
-      suggestion.textContent = (selectedMode === 'auto' ? 'Auto → ' : '') + (finalMode === 'photo' ? 'Photos' : 'Vidéo');
-      hint.textContent = selectedMode === 'auto'
+      const youtubeMp4 = info.name === 'YouTube' && finalMode === 'video';
+      suggestion.textContent = (selectedMode === 'auto' ? 'Auto → ' : '') + (finalMode === 'photo' ? 'Photos' : youtubeMp4 ? 'Vidéo MP4' : 'Vidéo');
+      hint.textContent = youtubeMp4
+        ? 'YouTube : demande un MP4 avec son, compatible iPhone. Si YouTube ne propose pas ce format, le téléchargement peut échouer.'
+        : selectedMode === 'auto'
         ? 'Le type est estimé depuis l’adresse. Pour un lien court ou une publication mixte, sélectionne Vidéo ou Photos si la commande échoue.'
         : (finalMode === 'photo'
             ? 'Utilise gallery-dl pour récupérer les images et les médias accessibles de la publication.'
             : 'Utilise yt-dlp avec le mode diagnostic déjà testé dans a-Shell mini.');
       current = finalMode === 'photo'
         ? 'gallery-dl ' + shellQuote(u.href)
-        : 'yt-dlp --verbose --ignore-config -o ' + shellQuote('RS-%(id)s.%(ext)s') + ' ' + shellQuote(u.href);
+        : 'yt-dlp --verbose --ignore-config ' + (youtubeMp4 ? '-f ' + shellQuote('b[ext=mp4]') + ' ' : '') + '-o ' + shellQuote('RS-%(id)s.%(ext)s') + ' ' + shellQuote(u.href);
       code.textContent = current;
       copyBtn.disabled = false;
     }
